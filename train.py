@@ -364,9 +364,9 @@ def train(args, model, discriminator, optimizer, dis_optimizer, trainloader, tar
                 source_images = source_images.cuda()
                 source_labels = source_labels.cuda()
             
-            lr.zero_grad()
+            optimizer.zero_grad()
             
-            lr_D.zero_grad() 
+            dis_optimizer.zero_grad() 
 
             with amp.autocast():
                 output, output_sup1, output_sup2 = model(source_images) #final_output, output_x16down, output_(x32down*tail)
@@ -395,7 +395,7 @@ def train(args, model, discriminator, optimizer, dis_optimizer, trainloader, tar
                 target_images = target_images.cuda()
 
             with amp.autocast():
-                output_target, _, _ = model(target_images) #Al discriminatore va passato solo output
+                output_target, _, _ = model(target_images) #Al discriminatore va passato solo output # TODO passare la maschera al target?
 
                 D_out = discriminator(F.softmax(output_target))      
 
@@ -405,9 +405,9 @@ def train(args, model, discriminator, optimizer, dis_optimizer, trainloader, tar
                                                                                                         #NB source_label != source_labels, source_label = 0 etichetta per con cui D distingue source e target
                                                                                                         #                                  source_labels = labels del batch di immagini provenienti da GTA      
 
-                loss_adv = args.lambda_adv_target1 * loss_adv_target 
+                loss_adv = args.lambda_adv_target1 * loss_adv_target  #TODO controllare domani
             
-            scaler_dis.scale(loss_adv).backward()
+            scaler.scale(loss_adv).backward()
 
             #----------------------------------end G-----------------------------------------------
 
@@ -444,8 +444,8 @@ def train(args, model, discriminator, optimizer, dis_optimizer, trainloader, tar
             #-----------------------------------end D-----------------------------------------------
 
             #Lo step degli optmizer va alla fine dei due training
-            scaler.step(lr)
-            scaler_dis.step(lr_D)
+            scaler.step(optimizer)
+            scaler_dis.step(dis_optimizer)
             scaler.update()
             scaler_dis.update()
 
