@@ -1,4 +1,5 @@
 import json
+import os
 import torch.nn as nn
 import torch
 from torch.nn import functional as F
@@ -12,6 +13,8 @@ from torchvision import transforms
 from fvcore.nn import FlopCountAnalysis
 from fvcore.nn.parameter_count import parameter_count
 import matplotlib.pyplot as plt
+
+
 
 
 #-------------------------------------------------------------
@@ -210,19 +213,7 @@ def map_label(label, label_mappign_info):
 
     return label_copy
 
-def one_hot(label):
-    # return semantic_map -> [H, W, class_num]
-    semantic_map = []
-    for class_index in range(20):
-        if class_index == 19:
-            class_index = 255
-        
-        mask = label==class_index
-        semantic_map.append(mask)
-    
-    semantic_map = np.stack(semantic_map, axis=-1).astype(np.float32)
 
-    return semantic_map
 
 
 
@@ -269,6 +260,40 @@ def get_index(i):
 	Create the index to save the example
 	"""
 	return "0"*(3-len(str(i)))+str(i)
+
+
+def one_hot(label):
+    # return semantic_map -> [H, W, class_num]
+    semantic_map = []
+    for class_index in range(20):
+        if class_index == 19:
+            class_index = 255
+        
+        mask = label==class_index
+        semantic_map.append(mask)
+    
+    semantic_map = torch.tensor(np.stack(semantic_map, axis=-1).astype(np.float32)).permute(2,0,1)
+    return semantic_map
+
+
+def create_mask(train_labels):
+	#per ogni mask crea la versione one hot
+	label_list = []
+	for i, label in enumerate(train_labels):
+		label_list.append(one_hot(label))
+	#somma le one hot
+	
+	mask = torch.zeros(label_list[0].shape)
+	for label in label_list:
+		mask += label
+	
+	# creazione weighted vector
+	weighted_vector = torch.sum(mask, axis=(-1,-2)) / (mask.shape[1] * mask.shape[2] * len(label_list))
+
+	#dividi per numero immagini
+	mask_normalized = mask / len(train_labels)
+	return mask_normalized, weighted_vector
+	
 
 #------------------------------------------------------------
 #------------------CUSTOM TRANSFORMS-------------------------
