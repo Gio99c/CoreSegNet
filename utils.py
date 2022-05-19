@@ -265,10 +265,9 @@ def get_index(i):
 def one_hot(label):
     # return semantic_map -> [H, W, class_num]
     semantic_map = []
-    for class_index in range(20):
-        if class_index == 19:
-            class_index = 255
-        
+    for class_index in range(19):
+        #if class_index == 19:
+        #    class_index = 255
         mask = label==class_index
         semantic_map.append(mask)
     
@@ -279,10 +278,10 @@ def one_hot(label):
 def create_mask(train_labels):
 	#per ogni mask crea la versione one hot
 	label_list = []
-	for i, label in enumerate(train_labels):
+	for i, label in enumerate(train_labels):	
 		label_list.append(one_hot(label))
-	#somma le one hot
 	
+	#somma le one hot
 	mask = torch.zeros(label_list[0].shape)
 	for label in label_list:
 		mask += label
