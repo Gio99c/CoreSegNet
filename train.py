@@ -373,7 +373,7 @@ def train(args, model, discriminator, optimizer, dis_optimizer, trainloader, tar
                 output, output_sup1, output_sup2 = model(source_images) #final_output, output_x16down, output_(x32down*tail)
 
                 if args.with_mask:
-                    loss1 = NLLLoss(F.log_softmax(output) + torch.log(mask), source_labels, ignore_index=255, weight=weights) # principal loss with mask
+                    loss1 = NLLLoss(F.log_softmax(output) + torch.log(mask.cuda()), source_labels, ignore_index=255, weight=weights) # principal loss with mask
                 else:
                     loss1 = loss_func(output, source_labels)                                               # principal loss without mask
 
@@ -429,10 +429,10 @@ def train(args, model, discriminator, optimizer, dis_optimizer, trainloader, tar
             with amp.autocast():
                 D_out = discriminator(F.softmax(output_target))
 
-                loss_D_traget = bce_loss(D_out, torch.FloatTensor(D_out.data.size()).fill_(target_label).cuda())
+                loss_D_target = bce_loss(D_out, torch.FloatTensor(D_out.data.size()).fill_(target_label).cuda())
 
             #scaler_dis.scale().backward()
-            loss_D = loss_D_source*0.5 + loss_D_traget*0.5
+            loss_D = loss_D_source*0.5 + loss_D_target*0.5
             scaler_dis.scale(loss_D).backward() # Nuova backward
 
             #-----------------------------------end D-----------------------------------------------
