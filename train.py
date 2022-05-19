@@ -570,8 +570,8 @@ if __name__ == '__main__':
         '--num_classes', '19',
         '--cuda', '0',
         '--batch_size', '6',
-        '--save_model_path', '/content/drive/MyDrive/MLDL_Project/AdaptSegNet/models/',
-        '--tensorboard_logdir', '/content/drive/MyDrive/MLDL_Project/AdaptSegNet/runs/',
+        '--save_model_path', '/content/drive/MyDrive/MLDL_Project/PriorNet/models/',
+        '--tensorboard_logdir', '/content/drive/MyDrive/MLDL_Project/PriorNet/runs/',
         '--context_path', 'resnet101',  # set resnet18 or resnet101, only support resnet18 and resnet101
         '--optimizer', 'sgd',
 
