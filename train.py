@@ -227,10 +227,11 @@ def main(params):
                                 transforms.RandomCrop(input_size_target, pad_if_needed=True)])
 
     GTA5_dataset = GTA(root= args.data_source, 
-                         images_folder= 'images', labels_folder= 'labels',
+                         images_folder= 'images', 
+                         labels_folder= 'labels',
                          list_path= args.data_list_path_source,
                          info_file= args.info_file,
-                         transforms= composed_source)
+    )
 
     mask, weights = create_mask(GTA5_dataset.get_labels())
     
@@ -240,7 +241,6 @@ def main(params):
                          labels_folder='labels',
                          train=True,
                          info_file= args.info_file,
-                         transforms= composed_target
     )
 
     Cityscapes_dataset_val = Cityscapes(root= args.data_target,
@@ -248,7 +248,6 @@ def main(params):
                          labels_folder='labels',
                          train=False,
                          info_file= args.info_file,
-                         transforms= composed_target
     )
 
     #Dataloader instances
@@ -373,7 +372,7 @@ def train(args, model, discriminator, optimizer, dis_optimizer, trainloader, tar
                 output, output_sup1, output_sup2 = model(source_images) #final_output, output_x16down, output_(x32down*tail)
 
                 if args.with_mask:
-                    loss1 = NLLLoss(F.log_softmax(output) + torch.log(mask.cuda()), source_labels, ignore_index=255, weight=weights) # principal loss with mask
+                    loss1 = NLLLoss(weight=weights.cuda(), ignore_index=255)(F.log_softmax(output) + torch.log(mask.cuda()), source_labels) # principal loss with mask
                 else:
                     loss1 = loss_func(output, source_labels)                                               # principal loss without mask
 
@@ -416,7 +415,7 @@ def train(args, model, discriminator, optimizer, dis_optimizer, trainloader, tar
             output = output.detach()
 
             with amp.autocast():
-                D_out = discriminator(F.softmax(output) * mask) ## @Edoardo, @Sebastiano - giusto?
+                D_out = discriminator(F.softmax(output) * mask.cuda()) ## @Edoardo, @Sebastiano - giusto?
 
                 loss_D_source = bce_loss(D_out, torch.FloatTensor(D_out.data.size()).fill_(source_label).cuda())
 

@@ -268,11 +268,10 @@ def one_hot(label):
     n_ignore = 0
     for class_index in range(20):
         if class_index == 19:
-            n_ignore = torch.sum(label == 255)
-        #    class_index = 255
+            class_index = 255
+            n_ignore = torch.sum(label == class_index).item()
         mask = label==class_index
         semantic_map.append(mask)
-    print(n_ignore)
     semantic_map = torch.tensor(np.stack(semantic_map, axis=-1).astype(np.float32)).permute(2,0,1)
     return semantic_map, n_ignore
 
@@ -292,9 +291,11 @@ def create_mask(train_labels):
         mask += label
     
     # creazione weighted vector
-    weighted_vector = torch.sum(mask, axis=(-1,-2)) / (mask.shape[1] * mask.shape[2] * len(label_list) - ignore_pixels)
-    print(torch.sum(weighted_vector))
-    #dividi per numero immagini
+    perc_samples = torch.sum(mask, axis=(-1,-2)) / (mask.shape[1] * mask.shape[2] * len(label_list) - ignore_pixels) * 100
+    perc_samples = perc_samples.tolist()
+    normed_weights = [1 - (x / sum(perc_samples)) for x in perc_samples]
+    weighted_vector = torch.FloatTensor(normed_weights)
+
     mask_normalized = mask / len(train_labels)
     return mask_normalized, weighted_vector
     
