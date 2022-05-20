@@ -152,6 +152,12 @@ def per_class_iu(hist):
     epsilon = 1e-5
     return (np.diag(hist)) / (hist.sum(1) + hist.sum(0) - np.diag(hist) + epsilon)
 
+def stuff_thing_miou(miou_list, stuff, things):
+    stuffs_miou = sum(miou_list[stuff]) / len(stuff)
+    things_miou = sum(miou_list[things]) / len(things)
+    return stuffs_miou, things_miou
+    
+
 def cal_miou(miou_list, csv_path):
     # return label -> {label_name: [r_value, g_value, b_value, ...}
     ann = pd.read_csv(csv_path)
@@ -281,10 +287,9 @@ def create_mask(train_labels):
     #per ogni mask crea la versione one hot
     print("Inizio step 1")
     ignore_pixels = 0
-        
+    things = [6, 7, 11, 12, 13, 14, 15, 16, 17, 18]
     #somma le one hot
     (h,w) = train_labels[0].shape
-    
 
     mask = torch.zeros((19, h, w))
     for label in train_labels:
@@ -295,12 +300,16 @@ def create_mask(train_labels):
     
     # creazione weighted vector
     print("Inizio step 2")
-    perc_samples = torch.sum(mask, axis=(-1,-2)) / (mask.shape[1] * mask.shape[2] * len(train_labels) - ignore_pixels) * 100
-    perc_samples = perc_samples.tolist()
-    normed_weights = [1 - (x / sum(perc_samples)) for x in perc_samples]
-    weighted_vector = torch.FloatTensor(normed_weights)
+    weighted_vector = torch.tensor(1) - torch.sum(mask, axis=(-1,-2)) / (mask.shape[1] * mask.shape[2] * len(train_labels) - ignore_pixels)
+
+    for i in range(19):
+        if i in things:
+            mask[i] = torch.ones((h, w)) * len(train_labels)
 
     mask_normalized = mask / len(train_labels)
+    print(f"mask: {mask_normalized}")
+    print(f"mask ones: {mask_normalized[things[0]]}")
+
     return mask_normalized, weighted_vector
     
 

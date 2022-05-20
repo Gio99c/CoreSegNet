@@ -16,7 +16,7 @@ from tensorboardX import SummaryWriter
 from tqdm import tqdm
 import numpy as np
 from utils import create_mask, get_index, save_images, parameter_flops_count, poly_lr_scheduler
-from utils import reverse_one_hot, compute_global_accuracy, fast_hist, per_class_iu
+from utils import reverse_one_hot, compute_global_accuracy, fast_hist, per_class_iu, stuff_thing_miou
 
 import torch.cuda.amp as amp
 from torchvision import transforms
@@ -492,6 +492,8 @@ def val(args, model, dataloader, validation_run):
 
     #prepare info_file to save examples
     info = json.load(open(args.data_target+"/"+args.info_file))
+    stuffs = info["stuffs"]
+    things = info["things"]
     palette = {i if i!=19 else 255:info["palette"][i] for i in range(20)}
     mean = torch.as_tensor(info["mean"])
     if torch.cuda.is_available() and args.use_gpu:
@@ -537,13 +539,14 @@ def val(args, model, dataloader, validation_run):
     
     precision = np.mean(precision_record)
     miou_list = per_class_iu(hist) 
-    miou = np.mean(miou_list)
+    stuffs_miou, things_miou = stuff_thing_miou(miou_list, stuffs, things)
 
     print('precision per pixel for test: %.3f' % precision)
-    print('mIoU for validation: %.3f' % miou)
+    print('stuffs mIoU for validation: %.3f' % stuffs_miou)
+    print('things mIoU for validation: %.3f' % things_miou)
     print(f'mIoU per class: {miou_list}')
 
-    return precision, miou
+    return precision, stuffs_miou, things_miou
     
 
 
