@@ -212,7 +212,7 @@ def main(params):
                          labels_folder= 'labels',
                          list_path= args.data_list_path_source,
                          info_file= args.info_file,
-                         composed = None
+                         transforms= None
     )
 
     Cityscapes_dataset_train = Cityscapes(root= args.data_target,
@@ -220,7 +220,7 @@ def main(params):
                          labels_folder='labels',
                          train=True,
                          info_file= args.info_file,
-                         composed = None
+                         transforms = None
     )
 
     Cityscapes_dataset_val = Cityscapes(root= args.data_target,
@@ -228,7 +228,7 @@ def main(params):
                          labels_folder='labels',
                          train=False,
                          info_file= args.info_file,
-                         composed = None
+                         transforms = None
     )
 
     #Dataloader instances
