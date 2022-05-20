@@ -85,7 +85,7 @@ class GTA(VisionDataset):
     def get_labels(self):
         print('getting labels')
         labels = []
-        for i in tqdm(range(self.__len__())): 
+        for i in tqdm((range(self.__len__()))): 
             _, label = self.__getitem__(i)
             labels.append(label)
         return labels
@@ -109,6 +109,16 @@ if __name__ == "__main__":
 
     # # #Image
     image = transforms.ToPILImage()(image.to(torch.uint8))
+
+    from PIL import ImageFont
+    from PIL import ImageDraw
+
+    draw = ImageDraw.Draw(image)
+    # font = ImageFont.truetype(<font-file>, <font-size>)
+    
+    # draw.text((x, y),"Sample Text",(r,g,b))
+    
+    image.show(title="Your Title Here")
     
     # # #Label
     palette = {i if i!=19 else 255:info["palette"][i] for i in range(20)}
@@ -116,11 +126,11 @@ if __name__ == "__main__":
     layer_0 = one_hot(label)[0][16]
     layer_0 = colorLabel(layer_0, palette)
 
-    layer_0.show()
+    #layer_0.show()
 
     label = colorLabel(label,palette)
-    label.show()
-    image.show()
+    #label.show()
+    #image.show()
     
     
 
@@ -138,11 +148,17 @@ if __name__ == "__main__":
 
     # plt.show()
 
-    mask = create_mask(data.get_labels())
-    layer_1 = mask[0][13]
-    layer_1 = torch.tensor(layer_1*255, dtype=torch.uint8)
-    layer_1 = transforms.ToPILImage()(layer_1)
-    layer_1.show()
+    mask,_ = create_mask(data.get_labels())
+    print(mask.shape)
+    for i,layer in enumerate(mask):
+        
+        layer_1 = layer
+        print("layer shape: ",layer_1.shape)
+        layer_1 = torch.tensor(layer_1.clone().detach()*255, dtype=torch.uint8)
+        layer_1 = transforms.ToPILImage()(layer_1)
+        draw = ImageDraw.Draw(layer_1)
+        draw.text((0, 0),f"Etichetta numero {i}",fill =128)
+        layer_1.show()
 
     # #check prob
     # prob = torch.sum(mask, axis = -3)

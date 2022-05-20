@@ -10,8 +10,8 @@ import random
 import numbers
 import torchvision
 from torchvision import transforms
-from fvcore.nn import FlopCountAnalysis
-from fvcore.nn.parameter_count import parameter_count
+# from fvcore.nn import FlopCountAnalysis
+# from fvcore.nn.parameter_count import parameter_count
 import matplotlib.pyplot as plt
 
 
@@ -295,7 +295,7 @@ def create_mask(train_labels):
     
     # creazione weighted vector
     print("Inizio step 2")
-    perc_samples = torch.sum(mask, axis=(-1,-2)) / (mask.shape[1] * mask.shape[2] * len(label_list) - ignore_pixels) * 100
+    perc_samples = torch.sum(mask, axis=(-1,-2)) / (mask.shape[1] * mask.shape[2] * len(train_labels) - ignore_pixels) * 100
     perc_samples = perc_samples.tolist()
     normed_weights = [1 - (x / sum(perc_samples)) for x in perc_samples]
     weighted_vector = torch.FloatTensor(normed_weights)
