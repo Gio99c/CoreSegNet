@@ -152,6 +152,12 @@ def per_class_iu(hist):
     epsilon = 1e-5
     return (np.diag(hist)) / (hist.sum(1) + hist.sum(0) - np.diag(hist) + epsilon)
 
+def stuff_thing_miou(miou_list, stuff, things):
+    stuffs_miou = sum(miou_list[stuff]) / len(stuff)
+    things_miou = sum(miou_list[things]) / len(things)
+    return stuffs_miou, things_miou
+    
+
 def cal_miou(miou_list, csv_path):
     # return label -> {label_name: [r_value, g_value, b_value, ...}
     ann = pd.read_csv(csv_path)
