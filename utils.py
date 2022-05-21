@@ -153,9 +153,10 @@ def per_class_iu(hist):
     return (np.diag(hist)) / (hist.sum(1) + hist.sum(0) - np.diag(hist) + epsilon)
 
 def stuff_thing_miou(miou_list, stuff, things):
+    overall_miou = sum(miou_list) / len(miou_list)
     stuffs_miou = sum(miou_list[stuff]) / len(stuff)
     things_miou = sum(miou_list[things]) / len(things)
-    return stuffs_miou, things_miou
+    return overall_miou, stuffs_miou, things_miou
     
 
 def cal_miou(miou_list, csv_path):

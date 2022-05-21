@@ -68,7 +68,8 @@ OPTIMIZER = 'sgd'
 LOSS = 'crossentropy'
 FLOPS = False
 LIGHT = True
-WITH_MASK = False
+WITH_MASK = True
+WEIGHTS = True
 SAVE_IMAGES = True
 SAVE_IMAGES_STEP = 10
 
@@ -126,7 +127,8 @@ def get_arguments(params):
     parser.add_argument('--loss', type=str, default=LOSS, help='loss function, dice or crossentropy')
     parser.add_argument('--flops', type=bool, default=FLOPS, help='Display the number of parameter and the number of flops')
     parser.add_argument('--light', type=bool, default=LIGHT, help='Perform the training with the lightweight discriminator')
-    parser.add_argument('--with_mask', type=bool, default=WITH_MASK, help='Indicate if mask is needed')
+    parser.add_argument('--with_mask', type=bool, default=WITH_MASK, help='Applies the mask')
+    parser.add_argument('--weights', type=bool, default=WEIGHTS, help='Applies the weights for the loss function')
     
 
     parser.add_argument('--tensorboard_logdir', type=str, default=TENSORBOARD_LOGDIR, help='Directory for the tensorboard writer')
@@ -253,10 +255,10 @@ def main(params):
     #Create mask and weights
     mask = None
     weights = None
-    if args.with_mask:
+    if args.with_mask or args.weights:
         mask, weights = create_mask(GTA5_dataset.get_labels()) 
         if torch.cuda.is_available() and args.use_gpu:
-            mask = mask.cuda() 
+            mask = mask.cuda()
             weights = weights.cuda()
 
 
@@ -308,7 +310,7 @@ def train(args, model, discriminator,                   #models
 
     #Suffix for saving
     time = datetime.datetime.now(tz=timezone("Europe/Rome")).strftime("%d%B_%H:%M")
-    suffix = f"{time}_{args.context_path}_epoch={args.num_epochs}_light={args.light}_mask={args.with_mask}_batch={args.batch_size}_lr={args.learning_rate}_resizetarget=({args.input_size_target})_resizesource=({args.input_size_source})"
+    suffix = f"{time}_{args.context_path}_epoch={args.num_epochs}_light={args.light}_mask={args.with_mask}_weights={args.weights}_batch={args.batch_size}_lr={args.learning_rate}_resizetarget=({args.input_size_target})_resizesource=({args.input_size_source})"
     args.save_model_path = args.save_model_path + suffix
     
     #Writer
@@ -316,7 +318,7 @@ def train(args, model, discriminator,                   #models
     
     #Set the loss of G
     loss_func = torch.nn.CrossEntropyLoss(ignore_index=255)
-    nllloss = torch.nn.NLLLoss(weight=weights, ignore_index=255)
+    nllloss = torch.nn.NLLLoss(weight=weights if args.weights else None, ignore_index=255)
 
     #Set the loss of D
     bce_loss = torch.nn.BCEWithLogitsLoss()
@@ -474,16 +476,19 @@ def train(args, model, discriminator,                   #models
         
         #Validation step
         if epoch % args.validation_step == 0 and epoch != 0:
-                precision, miou = val(args, model, valloader, validation_run)
+                precision, overall_miou, stuffs_miou, things_miou = val(args, model, valloader, validation_run)
                 validation_run += 1
                 #Check if the current model is the best one
-                if miou > max_miou:
-                    max_miou = miou
+                if overall_miou > max_miou:
+                    max_miou = overall_miou
                     os.makedirs(args.save_model_path, exist_ok=True)
                     torch.save(model.module.state_dict(),
                             os.path.join(args.save_model_path, 'best_model.pth'))
+
                 writer.add_scalar('epoch/precision_val', precision, epoch)
-                writer.add_scalar('epoch/miou val', miou, epoch)
+                writer.add_scalar('epoch/overall miou val', overall_miou, epoch)
+                writer.add_scalar('epoch/stuffs miou val', stuffs_miou, epoch)
+                writer.add_scalar('epoch/things miou val', things_miou, epoch)
 
 
 def val(args, model, dataloader, validation_run):
@@ -539,14 +544,15 @@ def val(args, model, dataloader, validation_run):
     
     precision = np.mean(precision_record)
     miou_list = per_class_iu(hist) 
-    stuffs_miou, things_miou = stuff_thing_miou(miou_list, stuffs, things)
+    overall_miou, stuffs_miou, things_miou = stuff_thing_miou(miou_list, stuffs, things)
 
     print('precision per pixel for test: %.3f' % precision)
+    print('overall mIoU for validation: %.3f' % overall_miou)
     print('stuffs mIoU for validation: %.3f' % stuffs_miou)
     print('things mIoU for validation: %.3f' % things_miou)
     print(f'mIoU per class: {miou_list}')
 
-    return precision, stuffs_miou, things_miou
+    return precision, overall_miou, stuffs_miou, things_miou
     
 
 
@@ -566,41 +572,12 @@ if __name__ == '__main__':
         '--batch_size', '6',
         '--save_model_path', '/content/drive/MyDrive/MLDL_Project/PriorNet/models/',
         '--tensorboard_logdir', '/content/drive/MyDrive/MLDL_Project/PriorNet/runs/',
-        '--context_path', 'resnet101',  # set resnet18 or resnet101, only support resnet18 and resnet101
+        '--context_path', 'resnet101', 
         '--optimizer', 'sgd',
 
     ]
 
     main(params)
-    
-    # args = get_arguments(params)
-
-    # model = BiSeNet(19, 'resnet101')
-
-
-    # h, w = map(int, args.input_size_target.split(','))
-    # input_size_target = (h, w)
-
-    # composed_target = transforms.Compose([transforms.ToTensor(),                                                               
-    #                             transforms.RandomHorizontalFlip(p=0.5),                                             
-    #                             transforms.RandomCrop(input_size_target, pad_if_needed=True)])
-
-    # Cityscapes_dataset_val = Cityscapes(root= args.data_target,
-    #                      images_folder= 'images',
-    #                      labels_folder='labels',
-    #                      train=False,
-    #                      info_file= args.info_file,
-    #                      transforms= composed_target
-    # )
-
-    # valloader = DataLoader(Cityscapes_dataset_val,
-    #                         batch_size=1,
-    #                         shuffle=False, 
-    #                         num_workers=args.num_workers,
-    #                         pin_memory=True)
-
-
-    # val(args, model, valloader, 0)
 
 
     
