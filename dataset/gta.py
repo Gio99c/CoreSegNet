@@ -81,7 +81,6 @@ class GTA(VisionDataset):
     
 
     def get_labels(self):
-        print('getting labels')
         labels = []
         for i in tqdm((range(self.__len__()))): 
             _, label = self.__getitem__(i)

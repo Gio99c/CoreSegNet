@@ -46,6 +46,7 @@ DATA_LIST_PATH_SOURCE = 'train.txt'
 DATA_TARGET = './data/Cityscapes/data'
 DATA_LIST_PATH_TARGET = 'train.txt'
 INFO_FILE_PATH = 'info.json'
+MASK_PATH = 'data/GTA5/masks/normal'
 
 INPUT_SIZE_SOURCE = '720,1280'
 INPUT_SIZE_TARGET = '512,1024'
@@ -104,6 +105,8 @@ def get_arguments(params):
     parser.add_argument('--data_target', type=str, default=DATA_TARGET, help='path of training target data')
     parser.add_argument('--data_list_path_target', type=str, default=DATA_LIST_PATH_TARGET, help='path of training labels of target data')
     parser.add_argument('--info_file', type=str, default=INFO_FILE_PATH, help='path info file')
+    parser.add_argument('--mask_path', type=str, default=MASK_PATH, help='path for the masks')
+
 
 
     parser.add_argument('--input_size_source', type=str, default=INPUT_SIZE_SOURCE, help='Size of input source image')
@@ -256,7 +259,7 @@ def main(params):
     mask = None
     weights = None
     if args.with_mask or args.weights:
-        mask, weights = create_mask(GTA5_dataset.get_labels()) 
+        mask, weights = create_mask(GTA5_dataset, args.mask_path) 
         if torch.cuda.is_available() and args.use_gpu:
             mask = mask.cuda()
             weights = weights.cuda()
@@ -572,6 +575,7 @@ if __name__ == '__main__':
         '--batch_size', '6',
         '--save_model_path', '/content/drive/MyDrive/MLDL_Project/PriorNet/models/',
         '--tensorboard_logdir', '/content/drive/MyDrive/MLDL_Project/PriorNet/runs/',
+        '--mask_path', '/content/drive/MyDrive/MLDL_Project/AdaptSegNet/data/GTA5/masks',
         '--context_path', 'resnet101', 
         '--optimizer', 'sgd',
 

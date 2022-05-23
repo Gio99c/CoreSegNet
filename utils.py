@@ -18,6 +18,7 @@ import matplotlib.pyplot as plt
 
 
 
+
 #-------------------------------------------------------------
 #-----------------PREDEFINED FUNCTIONS------------------------
 #-------------------------------------------------------------
@@ -279,28 +280,39 @@ def one_hot(label):
     return semantic_map, n_ignore
 
 
-def create_mask(train_labels):
-    #per ogni mask crea la versione one hot
-    ignore_pixels = 0
-    things = [6, 7, 11, 12, 13, 14, 15, 16, 17, 18]
-    #somma le one hot
-    (h,w) = train_labels[0].shape
+def create_mask(dataset, mask_path):
+    print(os.path.exists(os.path.join(mask_path, "mask_normalized.pt")) and os.path.exists(os.path.join(mask_path, "weighted_vector.pt")))
+    if os.path.exists(os.path.join(mask_path, "mask_normalized.pt")) and os.path.exists(os.path.join(mask_path, "weighted_vector.pt")):
+        print("**Existing masks & weights loaded**")
+        mask_normalized = torch.load(os.path.join(mask_path, "mask_normalized.pt"))
+        weighted_vector = torch.load(os.path.join(mask_path, "weighted_vector.pt"))
+    else:
+        #per ogni mask crea la versione one hot
+        print("**Extracting masks & weights**")
+        train_labels = dataset.get_labels()
+        ignore_pixels = 0
+        things = [6, 7, 11, 12, 13, 14, 15, 16, 17, 18]
+        #somma le one hot
+        (h,w) = train_labels[0].shape
 
-    mask = torch.zeros((19, h, w))
-    for label in tqdm(train_labels):
-        one_hot_label, n_ignore = one_hot(label)
-        mask += one_hot_label
-        ignore_pixels += n_ignore
+        masks = torch.zeros((19, h, w))
+        for label in tqdm(train_labels):
+            one_hot_label, n_ignore = one_hot(label)
+            masks += one_hot_label
+            ignore_pixels += n_ignore
 
-    
-    # creazione weighted vector
-    weighted_vector = torch.tensor(1) - torch.sum(mask, axis=(-1,-2)) / (mask.shape[1] * mask.shape[2] * len(train_labels) - ignore_pixels)
+        
+        # creazione weighted vector
+        weighted_vector = torch.tensor(1) - torch.sum(masks, axis=(-1,-2)) / (masks.shape[1] * masks.shape[2] * len(train_labels) - ignore_pixels)
 
-    #for i in range(19):
-    #    if i in things:
-    mask[things] = torch.ones((h, w)) * len(train_labels)
+        masks[things] = torch.ones((h, w)) * len(train_labels)
 
-    mask_normalized = mask / len(train_labels)
+        mask_normalized = masks / len(train_labels)
+
+        if not os.path.exists(mask_path):
+            os.mkdir(mask_path)
+        torch.save(mask_normalized, os.path.join(mask_path, "mask_normalized.pt"))
+        torch.save(weighted_vector, os.path.join(mask_path, "weighted_vector.pt"))
 
     return mask_normalized, weighted_vector
 
