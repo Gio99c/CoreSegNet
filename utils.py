@@ -153,11 +153,7 @@ def per_class_iu(hist):
     epsilon = 1e-5
     return (np.diag(hist)) / (hist.sum(1) + hist.sum(0) - np.diag(hist) + epsilon)
 
-def stuff_thing_miou(miou_list, stuff, things):
-    overall_miou = sum(miou_list) / len(miou_list)
-    stuffs_miou = sum(miou_list[stuff]) / len(stuff)
-    things_miou = sum(miou_list[things]) / len(things)
-    return overall_miou, stuffs_miou, things_miou
+
     
 
 def cal_miou(miou_list, csv_path):
@@ -243,25 +239,23 @@ def parameter_flops_count(model, discriminator, input=torch.randn(8, 3, 512, 102
 def save_images(mean, palette, image, predict, label, path_to_save):
     #Save an output examples
     #image
-    image = image[0].clone().detach()
-    image = (image.permute(1, 2, 0) + mean).permute(2, 0, 1)
-    image = transforms.ToPILImage()(image.to(torch.uint8))
+    # image = image[0].clone().detach()
+    # image = (image.permute(1, 2, 0) + mean).permute(2, 0, 1)
+    # image = transforms.ToPILImage()(image.to(torch.uint8))
+
     #prediction
     predict = torch.tensor(predict.copy(), dtype=torch.uint8)
     predict = colorLabel(predict, palette) 
-    #label from np to Pil Image
-    label = torch.tensor(label.copy(), dtype=torch.uint8)
-    label = colorLabel(label, palette)
+
+    # #label from np to Pil Image
+    # label = torch.tensor(label.copy(), dtype=torch.uint8)
+    # label = colorLabel(label, palette)
+
     #create the figure
-    fig, axs = plt.subplots(1,3, figsize=(10,5))
-    axs[0].imshow(image)
-    axs[0].axis('off')
-    axs[1].imshow(predict)
-    axs[1].axis('off')
-    axs[2].imshow(label)
-    axs[2].axis('off')
+    predict.save(path_to_save)
+
     #save the final result
-    plt.savefig(path_to_save) #@ Salvare in png | che significa i/2 ? | le immagini vengono sovrascritte ad ogni epoch? | Aggiungere la directory negli argomenti
+    # plt.savefig(path_to_save) 
 
 def get_index(i):
     """
@@ -309,6 +303,13 @@ def create_mask(train_labels):
     mask_normalized = mask / len(train_labels)
 
     return mask_normalized, weighted_vector
+
+
+def stuff_thing_miou(miou_list, stuff, things):
+    overall_miou = sum(miou_list) / len(miou_list)
+    stuffs_miou = sum(miou_list[stuff]) / len(stuff)
+    things_miou = sum(miou_list[things]) / len(things)
+    return overall_miou, stuffs_miou, things_miou
     
 
 #------------------------------------------------------------
