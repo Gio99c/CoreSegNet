@@ -113,7 +113,7 @@ if __name__ == "__main__":
 
     #create mask and print
     from PIL import ImageDraw
-    mask,_ = create_mask(data.get_labels())
+    mask,_ = create_mask(data, "data/GTA5/masks")
     print(mask.shape)
     for i,layer in enumerate(mask):
         layer = torch.tensor(layer.clone().detach()*255, dtype=torch.uint8)

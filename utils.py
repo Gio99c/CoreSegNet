@@ -10,6 +10,7 @@ import random
 import numbers
 import torchvision
 from torchvision import transforms
+from torchvision.utils import save_image
 from tqdm import tqdm
 from fvcore.nn import FlopCountAnalysis
 from fvcore.nn.parameter_count import parameter_count
@@ -281,11 +282,14 @@ def one_hot(label):
 
 
 def create_mask(dataset, mask_path):
-    print(os.path.exists(os.path.join(mask_path, "mask_normalized.pt")) and os.path.exists(os.path.join(mask_path, "weighted_vector.pt")))
+
+    # load masks & weights if already available
     if os.path.exists(os.path.join(mask_path, "mask_normalized.pt")) and os.path.exists(os.path.join(mask_path, "weighted_vector.pt")):
         print("**Existing masks & weights loaded**")
         mask_normalized = torch.load(os.path.join(mask_path, "mask_normalized.pt"))
         weighted_vector = torch.load(os.path.join(mask_path, "weighted_vector.pt"))
+
+    # creates masks & weights and stores them
     else:
         #per ogni mask crea la versione one hot
         print("**Extracting masks & weights**")
@@ -300,7 +304,6 @@ def create_mask(dataset, mask_path):
             one_hot_label, n_ignore = one_hot(label)
             masks += one_hot_label
             ignore_pixels += n_ignore
-
         
         # creazione weighted vector
         weighted_vector = torch.tensor(1) - torch.sum(masks, axis=(-1,-2)) / (masks.shape[1] * masks.shape[2] * len(train_labels) - ignore_pixels)
@@ -313,6 +316,13 @@ def create_mask(dataset, mask_path):
             os.mkdir(mask_path)
         torch.save(mask_normalized, os.path.join(mask_path, "mask_normalized.pt"))
         torch.save(weighted_vector, os.path.join(mask_path, "weighted_vector.pt"))
+        
+    # save masks as images if folder "mask_images" does not exists
+    if not os.path.exists(os.path.join(mask_path, "mask_images")):
+        os.mkdir(os.path.join(mask_path, "mask_images"))
+        for i, mask in enumerate(mask_normalized):
+            save_image(mask, os.path.join(mask_path, "mask_images", f"{i}.png"), format="png")
+
 
     return mask_normalized, weighted_vector
 
