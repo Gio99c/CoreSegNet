@@ -305,7 +305,6 @@ def train(args, model, discriminator,                   #models
                 trainloader, targetloader, valloader,   #loaders
                 mask= None, weights= None):             #other_parameters
 
-    validation_run = 0 
     
     #Create the scalers
     scaler = amp.GradScaler() 
@@ -479,8 +478,7 @@ def train(args, model, discriminator,                   #models
         
         #Validation step
         if epoch % args.validation_step == 0 and epoch != 0:
-                precision, overall_miou, stuffs_miou, things_miou = val(args, model, valloader, validation_run)
-                validation_run += 1
+                precision, overall_miou, stuffs_miou, things_miou = val(args, model, valloader, epoch)
                 #Check if the current model is the best one
                 if overall_miou > max_miou:
                     max_miou = overall_miou
