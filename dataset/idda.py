@@ -71,9 +71,9 @@ class IDDA(VisionDataset):
             label = self.transforms(label)    
         else: 
             image = transforms.ToTensor()(image)
-            image = transforms.Resize((540, 960))(image) 
+            image = transforms.Resize((720, 1280))(image) 
             label = transforms.ToTensor()(label)
-            label = transforms.Resize((540, 960), interpolation=transforms.InterpolationMode.NEAREST)(label)
+            label = transforms.Resize((720, 1280), interpolation=transforms.InterpolationMode.NEAREST)(label)
 
         return image, label[0]
     
@@ -90,8 +90,8 @@ class IDDA(VisionDataset):
 
 
 if __name__ == "__main__":
-    crop_width = 960
-    crop_height = 540
+    crop_width = 1280
+    crop_height = 720
     composed = torchvision.transforms.Compose([transforms.ToTensor(), transforms.RandomHorizontalFlip(p=0.5), transforms.RandomCrop((crop_height, crop_width), pad_if_needed=True)])
     
     data = IDDA(root=os.path.join(os.getcwd(),"data","IDDA"), images_folder="images", labels_folder="labels", list_path="train.txt", info_file="info.json") 

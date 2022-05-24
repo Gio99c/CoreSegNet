@@ -23,6 +23,7 @@ from torchvision import transforms
 
 from dataset.cityscapes import Cityscapes
 from dataset.gta import GTA
+from dataset.idda import IDDA
 from model.discriminator import FCDiscriminator, LightDiscriminator
 import torch.nn
 from torch.nn import NLLLoss
@@ -211,7 +212,8 @@ def main(params):
                                 transforms.RandomHorizontalFlip(p=0.5),                                             
                                 transforms.RandomCrop(input_size_target, pad_if_needed=True)])
 
-    #Datasets instances 
+    #Datasets instances
+    
     GTA5_dataset = GTA(root= args.data_source, 
                          images_folder= 'images', 
                          labels_folder= 'labels',
@@ -219,6 +221,23 @@ def main(params):
                          info_file= args.info_file,
                          transforms= None
     )
+
+    GTA5_modified_dataset = GTA(root= args.data_source, 
+                         images_folder= 'images', 
+                         labels_folder= 'labels',
+                         list_path= args.data_list_path_source,
+                         info_file= args.info_file,
+                         transforms= None
+    )
+
+    IDDA_dataset = IDDA(root= args.data_source, 
+                         images_folder= 'images', 
+                         labels_folder= 'labels',
+                         list_path= args.data_list_path_source,
+                         info_file= args.info_file,
+                         transforms= None)
+    
+    source_dataset = {"GTA5" : GTA5_dataset, "GTA5_modified" : GTA5_modified_dataset, "IDDA": IDDA_dataset}
 
     Cityscapes_dataset_train = Cityscapes(root= args.data_target,
                          images_folder= 'images',
@@ -237,7 +256,7 @@ def main(params):
     )
 
     #Dataloader instances
-    trainloader = DataLoader(GTA5_dataset,
+    trainloader = DataLoader(source_dataset[os.path.basename(args.data_source)],
                             batch_size=args.batch_size,
                             shuffle=True, 
                             num_workers=args.num_workers,
@@ -312,7 +331,7 @@ def train(args, model, discriminator,                   #models
 
     #Suffix for saving
     time = datetime.datetime.now(tz=timezone("Europe/Rome")).strftime("%d%B_%H:%M")
-    suffix = f"{time}_{args.context_path}_epoch={args.num_epochs}_light={args.light}_mask={args.with_mask}_weights={args.weights}_batch={args.batch_size}_lr={args.learning_rate}_resizetarget=({args.input_size_target})_resizesource=({args.input_size_source})"
+    suffix = f"{time}_{args.context_path}_epoch={args.num_epochs}_light={args.light}_mask={args.with_mask}_weights={args.weights}_batch={args.batch_size}_lr={args.learning_rate}_resizetarget=({args.input_size_target})_resizesource=({args.input_size_source})_dataset={os.path.basename(args.data_source)}"
     args.save_model_path = args.save_model_path + suffix
     
     #Writer
