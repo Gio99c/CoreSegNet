@@ -281,7 +281,7 @@ def one_hot(label):
     return semantic_map, n_ignore
 
 
-def create_mask(dataset, mask_path):
+def create_mask(datasets, mask_path):
 
     # load masks & weights if already available
     if os.path.exists(os.path.join(mask_path, "mask_normalized.pt")) and os.path.exists(os.path.join(mask_path, "weighted_vector.pt")):
@@ -293,7 +293,13 @@ def create_mask(dataset, mask_path):
     else:
         #per ogni mask crea la versione one hot
         print("**Extracting masks & weights**")
-        train_labels = dataset.get_labels()
+        if not isinstance(datasets, list):
+            datasets = [datasets]
+
+        train_labels = []
+        for dataset in datasets:
+            train_labels += dataset.get_labels()
+        
         ignore_pixels = 0
         things = [6, 7, 11, 12, 13, 14, 15, 16, 17, 18]
         #somma le one hot
