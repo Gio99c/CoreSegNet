@@ -11,6 +11,7 @@ from torchvision import transforms
 from torchvision.datasets.vision import VisionDataset
 from PIL import Image
 from utils import Map, MeanSubtraction, colorLabel, create_mask
+from tqdm import tqdm
 
 
 
@@ -80,6 +81,14 @@ class Cityscapes(VisionDataset):
             label = transforms.Resize((512, 1024), interpolation=transforms.InterpolationMode.NEAREST)(label)
 
         return image, label[0]
+
+
+    def get_labels(self):
+        labels = []
+        for i in tqdm((range(self.__len__()))): 
+            _, label = self.__getitem__(i)
+            labels.append(label)
+        return labels
 
 
 

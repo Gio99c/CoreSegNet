@@ -273,8 +273,8 @@ def one_hot(label):
     for class_index in range(20):
         if class_index == 19:
             class_index = 255
-            n_ignore = torch.sum(label == class_index).item()
-        else: 
+            n_ignore = torch.tensor(label.clone().detach() == class_index, dtype=torch.float32)
+        else:
             mask = label==class_index
             semantic_map.append(mask)
     semantic_map = torch.tensor(np.stack(semantic_map, axis=-1).astype(np.float32)).permute(2,0,1)
@@ -300,29 +300,30 @@ def create_mask(datasets, mask_path):
         for dataset in datasets:
             train_labels += dataset.get_labels()
         
-        ignore_pixels = 0
-        things = [6, 7, 11, 12, 13, 14, 15, 16, 17, 18]
+        classes = {"stuff": [0, 1, 2, 3, 4, 5, 8, 9, 10], "things": [6, 7, 11, 12, 13, 14, 15, 16, 17, 18]}
         #somma le one hot
         (h,w) = train_labels[0].shape
 
-        masks = torch.zeros((19, h, w))
+        masks = torch.zeros((len(classes["stuff"]) + len(classes["things"]), h, w))
+        ignore_pixels = torch.zeros(h,w)
         for label in tqdm(train_labels):
             one_hot_label, n_ignore = one_hot(label)
             masks += one_hot_label
             ignore_pixels += n_ignore
         
         # creazione weighted vector
-        weighted_vector = torch.tensor(1) - torch.sum(masks, axis=(-1,-2)) / (masks.shape[1] * masks.shape[2] * len(train_labels) - ignore_pixels)
+        weighted_vector = torch.tensor(1) - torch.sum(masks, axis=(-1,-2)) / (masks.shape[1] * masks.shape[2] * len(train_labels) - torch.sum(ignore_pixels))
 
-        masks[things] = torch.ones((h, w)) * len(train_labels)
-
-        mask_normalized = masks / len(train_labels)
+        mask_normalized = torch.nan_to_num(masks / (torch.tensor(len(train_labels)) - (torch.sum(masks[classes["things"]], axis=-3) + ignore_pixels)), nan=0)
+        print(torch.sum(mask_normalized, axis=-3))
+        mask_normalized[classes["things"]] = torch.ones((h, w))
+        print(torch.sum(mask_normalized, axis=-3))
 
         if not os.path.exists(mask_path):
             os.mkdir(mask_path)
         torch.save(mask_normalized, os.path.join(mask_path, "mask_normalized.pt"))
         torch.save(weighted_vector, os.path.join(mask_path, "weighted_vector.pt"))
-        
+    
     # save masks as images if folder "mask_images" does not exists
     if not os.path.exists(os.path.join(mask_path, "mask_images")):
         os.mkdir(os.path.join(mask_path, "mask_images"))
