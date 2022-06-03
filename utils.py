@@ -315,9 +315,7 @@ def create_mask(datasets, mask_path):
         weighted_vector = torch.tensor(1) - torch.sum(masks, axis=(-1,-2)) / (masks.shape[1] * masks.shape[2] * len(train_labels) - torch.sum(ignore_pixels))
 
         mask_normalized = torch.nan_to_num(masks / (torch.tensor(len(train_labels)) - (torch.sum(masks[classes["things"]], axis=-3) + ignore_pixels)), nan=0)
-        print(torch.sum(mask_normalized, axis=-3))
         mask_normalized[classes["things"]] = torch.ones((h, w))
-        print(torch.sum(mask_normalized, axis=-3))
 
         if not os.path.exists(mask_path):
             os.mkdir(mask_path)
