@@ -285,15 +285,8 @@ def main(params):
 
 
     #Build Model Optimizer
-    if args.optimizer == 'rmsprop':
-        optimizer = torch.optim.RMSprop(model.parameters(), args.learning_rate)
-    elif args.optimizer == 'sgd':
-        optimizer = torch.optim.SGD(model.parameters(), args.learning_rate, momentum=args.momentum, weight_decay=args.weight_decay)
-    elif args.optimizer == 'adam':
-        optimizer = torch.optim.Adam(model.parameters(), args.learning_rate)
-    else:  # rmsprop
-        print('not supported optimizer \n')
-        return None
+    optimizer = torch.optim.SGD(model.parameters(), args.learning_rate, momentum=args.momentum, weight_decay=args.weight_decay)
+
     
     #Build Discriminator Optimizer
     dis_optimizer = torch.optim.Adam(discriminator.parameters(), lr=args.learning_rate_D, betas=(0.9, 0.99))
